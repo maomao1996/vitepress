@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useWindowScroll } from '@vueuse/core'
-import { useSidebar } from '../composables/sidebar.js'
+import { useSidebar } from '../composables/sidebar'
 import VPNavBarTitle from './VPNavBarTitle.vue'
 import VPNavBarSearch from './VPNavBarSearch.vue'
 import VPNavBarMenu from './VPNavBarMenu.vue'
@@ -64,6 +64,7 @@ const classes = computed(() => ({
   height: var(--vp-nav-height);
   transition: border-color 0.5s, background-color 0.5s;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 .VPNavBar.has-sidebar {
@@ -94,6 +95,11 @@ const classes = computed(() => ({
   margin: 0 auto;
   max-width: calc(var(--vp-layout-max-width) - 64px);
   height: var(--vp-nav-height);
+  pointer-events: none;
+}
+
+.container > .title,
+.container > .content {
   pointer-events: none;
 }
 
@@ -166,6 +172,12 @@ const classes = computed(() => ({
   .VPNavBar.fill .content-body {
     position: relative;
     background-color: var(--vp-nav-bg-color);
+  }
+}
+
+@media (max-width: 768px) {
+  .content-body {
+    column-gap: 0.5rem;
   }
 }
 

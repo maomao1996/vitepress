@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, watch } from 'vue'
-import { useData } from '../composables/data.js'
-import { APPEARANCE_KEY } from '../../shared.js'
+import { useData } from '../composables/data'
+import { APPEARANCE_KEY } from '../../shared'
 import VPSwitch from './VPSwitch.vue'
 import VPIconSun from './icons/VPIconSun.vue'
 import VPIconMoon from './icons/VPIconMoon.vue'
@@ -76,8 +76,8 @@ watch(checked, (newIsDark) => {
 
 <template>
   <VPSwitch
+    title="toggle dark mode"
     class="VPSwitchAppearance"
-    aria-label="toggle dark mode"
     :aria-checked="checked"
     @click="toggle"
   >

@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { useData } from '../composables/data.js'
-import { useSidebar } from '../composables/sidebar.js'
+import { useData } from '../composables/data'
+import { useSidebar } from '../composables/sidebar'
 import VPIconAlignLeft from './icons/VPIconAlignLeft.vue'
+import VPLocalNavOutlineDropdown from './VPLocalNavOutlineDropdown.vue'
 
 defineProps<{
   open: boolean
@@ -11,17 +12,14 @@ defineEmits<{
   (e: 'open-menu'): void
 }>()
 
-const { theme } = useData()
+const { theme, frontmatter } = useData()
 const { hasSidebar } = useSidebar()
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-}
 </script>
 
 <template>
-  <div v-if="hasSidebar" class="VPLocalNav">
+  <div class="VPLocalNav" v-if="frontmatter.layout !== 'home'">
     <button
+      v-if="hasSidebar"
       class="menu"
       :aria-expanded="open"
       aria-controls="VPSidebarNav"
@@ -33,9 +31,7 @@ function scrollToTop() {
       </span>
     </button>
 
-    <a class="top-link" href="#" @click="scrollToTop">
-      {{ theme.returnToTopLabel || 'Return to top' }}
-    </a>
+    <VPLocalNavOutlineDropdown />
   </div>
 </template>
 
@@ -91,23 +87,12 @@ function scrollToTop() {
   fill: currentColor;
 }
 
-.top-link {
-  display: block;
+.VPOutlineDropdown {
   padding: 12px 24px 11px;
-  line-height: 24px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--vp-c-text-2);
-  transition: color 0.5s;
-}
-
-.top-link:hover {
-  color: var(--vp-c-text-1);
-  transition: color 0.25s;
 }
 
 @media (min-width: 768px) {
-  .top-link {
+  .VPOutlineDropdown {
     padding: 12px 32px 11px;
   }
 }
