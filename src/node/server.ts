@@ -5,7 +5,7 @@ import { createVitePressPlugin } from './plugin'
 
 export async function createServer(
   root: string = process.cwd(),
-  serverOptions: ServerOptions = {},
+  serverOptions: ServerOptions & { base?: string } = {},
   recreateServer?: () => Promise<void>
 ) {
   const config = await resolveConfig(root)
@@ -23,6 +23,7 @@ export async function createServer(
     cacheDir: config.cacheDir,
     plugins: await createVitePressPlugin(config, false, {}, {}, recreateServer),
     server: serverOptions,
-    customLogger: config.logger
+    customLogger: config.logger,
+    configFile: config.vite?.configFile
   })
 }

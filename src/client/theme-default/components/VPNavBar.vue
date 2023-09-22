@@ -1,15 +1,16 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
 import { useWindowScroll } from '@vueuse/core'
+import { ref, watchPostEffect } from 'vue'
+import { useData } from '../composables/data'
 import { useSidebar } from '../composables/sidebar'
-import VPNavBarTitle from './VPNavBarTitle.vue'
-import VPNavBarSearch from './VPNavBarSearch.vue'
-import VPNavBarMenu from './VPNavBarMenu.vue'
-import VPNavBarTranslations from './VPNavBarTranslations.vue'
 import VPNavBarAppearance from './VPNavBarAppearance.vue'
-import VPNavBarSocialLinks from './VPNavBarSocialLinks.vue'
 import VPNavBarExtra from './VPNavBarExtra.vue'
 import VPNavBarHamburger from './VPNavBarHamburger.vue'
+import VPNavBarMenu from './VPNavBarMenu.vue'
+import VPNavBarSearch from './VPNavBarSearch.vue'
+import VPNavBarSocialLinks from './VPNavBarSocialLinks.vue'
+import VPNavBarTitle from './VPNavBarTitle.vue'
+import VPNavBarTranslations from './VPNavBarTranslations.vue'
 
 defineProps<{
   isScreenOpen: boolean
@@ -19,13 +20,19 @@ defineEmits<{
   (e: 'toggle-screen'): void
 }>()
 
+// @ts-ignore
 const { y } = useWindowScroll()
 const { hasSidebar } = useSidebar()
+const { frontmatter } = useData()
 
-const classes = computed(() => ({
-  'has-sidebar': hasSidebar.value,
-  fill: y.value > 0
-}))
+const classes = ref<Record<string, boolean>>({})
+
+watchPostEffect(() => {
+  classes.value = {
+    'has-sidebar': hasSidebar.value,
+    top: frontmatter.value.layout === 'home' && y.value === 0,
+  }
+})
 </script>
 
 <template>
@@ -62,13 +69,8 @@ const classes = computed(() => ({
   border-bottom: 1px solid transparent;
   padding: 0 8px 0 24px;
   height: var(--vp-nav-height);
-  transition: border-color 0.5s, background-color 0.5s;
   pointer-events: none;
   white-space: nowrap;
-}
-
-.VPNavBar.has-sidebar {
-  border-bottom-color: var(--vp-c-gutter);
 }
 
 @media (min-width: 768px) {
@@ -79,11 +81,10 @@ const classes = computed(() => ({
 
 @media (min-width: 960px) {
   .VPNavBar.has-sidebar {
-    border-bottom-color: transparent;
     padding: 0;
   }
 
-  .VPNavBar.fill:not(.has-sidebar) {
+  .VPNavBar:not(.has-sidebar):not(.top) {
     border-bottom-color: var(--vp-c-gutter);
     background-color: var(--vp-nav-bg-color);
   }
@@ -168,14 +169,13 @@ const classes = computed(() => ({
 }
 
 @media (min-width: 960px) {
-  .VPNavBar.has-sidebar .content-body,
-  .VPNavBar.fill .content-body {
+  .VPNavBar:not(.top) .content-body{
     position: relative;
     background-color: var(--vp-nav-bg-color);
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .content-body {
     column-gap: 0.5rem;
   }

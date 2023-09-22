@@ -18,18 +18,13 @@ All **static** path references, including absolute paths, should be based on you
 
 ## The Public Directory
 
-Sometimes you may need to provide static assets that are not directly referenced in any of your Markdown or theme components, or you may want to serve certain files with the original filename. Examples of such files include `robot.txt`, favicons, and PWA icons.
+Sometimes you may need to provide static assets that are not directly referenced in any of your Markdown or theme components, or you may want to serve certain files with the original filename. Examples of such files include `robots.txt`, favicons, and PWA icons.
 
 You can place these files in the `public` directory under the [source directory](./routing#source-directory). For example, if your project root is `./docs` and using default source directory location, then your public directory will be `./docs/public`.
 
 Assets placed in `public` will be copied to the root of the output directory as-is.
 
 Note that you should reference files placed in `public` using root absolute path - for example, `public/icon.png` should always be referenced in source code as `/icon.png`.
-
-There is one exception to this: if you have an HTML page in `public` and link to it from the main site, the router will yield a 404 by default. To get around this, VitePress provides a `pathname://` protocol which allows you to link to another page in the same domain as if the link is external. Compare these two links:
-
-- [/pure.html](/pure.html)
-- <pathname:///pure.html>
 
 ## Base URL
 

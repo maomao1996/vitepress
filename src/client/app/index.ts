@@ -1,23 +1,22 @@
+import RawTheme from '@theme/index'
 import {
-  type App,
   createApp as createClientApp,
   createSSRApp,
   defineComponent,
   h,
   onMounted,
-  watchEffect
+  watchEffect,
+  type App
 } from 'vue'
-import RawTheme from '@theme/index'
-import { inBrowser, pathToFile } from './utils'
-import { type Router, RouterSymbol, createRouter, scrollTo } from './router'
-import { siteDataRef, useData } from './data'
+import { ClientOnly } from './components/ClientOnly'
+import { Content } from './components/Content'
+import { useCodeGroups } from './composables/codeGroups'
+import { useCopyCode } from './composables/copyCode'
 import { useUpdateHead } from './composables/head'
 import { usePrefetch } from './composables/preFetch'
-import { dataSymbol, initData } from './data'
-import { Content } from './components/Content'
-import { ClientOnly } from './components/ClientOnly'
-import { useCopyCode } from './composables/copyCode'
-import { useCodeGroups } from './composables/codeGroups'
+import { dataSymbol, initData, siteDataRef, useData } from './data'
+import { RouterSymbol, createRouter, scrollTo, type Router } from './router'
+import { inBrowser, pathToFile } from './utils'
 
 function resolveThemeExtends(theme: typeof RawTheme): typeof RawTheme {
   if (theme.extends) {
@@ -60,7 +59,7 @@ const VitePressApp = defineComponent({
     useCodeGroups()
 
     if (Theme.setup) Theme.setup()
-    return () => h(Theme.Layout)
+    return () => h(Theme.Layout!)
   }
 })
 
@@ -122,23 +121,28 @@ function newRouter(): Router {
 
   return createRouter((path) => {
     let pageFilePath = pathToFile(path)
+    let pageModule = null
 
-    if (isInitialPageLoad) {
-      initialPath = pageFilePath
-    }
+    if (pageFilePath) {
+      if (isInitialPageLoad) {
+        initialPath = pageFilePath
+      }
 
-    // use lean build if this is the initial page load or navigating back
-    // to the initial loaded path (the static vnodes already adopted the
-    // static content on that load so no need to re-fetch the page)
-    if (isInitialPageLoad || initialPath === pageFilePath) {
-      pageFilePath = pageFilePath.replace(/\.js$/, '.lean.js')
+      // use lean build if this is the initial page load or navigating back
+      // to the initial loaded path (the static vnodes already adopted the
+      // static content on that load so no need to re-fetch the page)
+      if (isInitialPageLoad || initialPath === pageFilePath) {
+        pageFilePath = pageFilePath.replace(/\.js$/, '.lean.js')
+      }
+
+      pageModule = import(/*@vite-ignore*/ pageFilePath)
     }
 
     if (inBrowser) {
       isInitialPageLoad = false
     }
 
-    return import(/*@vite-ignore*/ pageFilePath)
+    return pageModule
   }, Theme.NotFound)
 }
 
@@ -152,7 +156,9 @@ if (inBrowser) {
 
       // scroll to hash on new tab during dev
       if (import.meta.env.DEV && location.hash) {
-        const target = document.querySelector(decodeURIComponent(location.hash))
+        const target = document.getElementById(
+          decodeURIComponent(location.hash).slice(1)
+        )
         if (target) {
           scrollTo(target, location.hash)
         }

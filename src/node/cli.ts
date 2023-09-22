@@ -34,7 +34,7 @@ if (!command || command === 'dev') {
     await server.listen()
     logVersion(server.config.logger)
     server.printUrls()
-    bindShortcuts(server)
+    bindShortcuts(server, createDevServer)
   }
   createDevServer().catch((err) => {
     createLogger().error(
@@ -42,6 +42,9 @@ if (!command || command === 'dev') {
     )
     process.exit(1)
   })
+} else if (command === 'init') {
+  createLogger().info('', { clear: true })
+  init()
 } else {
   logVersion()
   if (command === 'build') {
@@ -56,8 +59,6 @@ if (!command || command === 'dev') {
       )
       process.exit(1)
     })
-  } else if (command === 'init') {
-    init()
   } else {
     createLogger().error(c.red(`unknown command "${command}".`))
     process.exit(1)

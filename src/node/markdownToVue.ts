@@ -1,12 +1,11 @@
 import { resolveTitleFromToken } from '@mdit-vue/shared'
 import _debug from 'debug'
-import fs from 'fs'
+import fs from 'fs-extra'
 import { LRUCache } from 'lru-cache'
 import path from 'path'
 import type { SiteConfig } from './config'
 import {
   createMarkdownRenderer,
-  type MarkdownEnv,
   type MarkdownOptions,
   type MarkdownRenderer
 } from './markdown'
@@ -14,13 +13,14 @@ import {
   EXTERNAL_URL_RE,
   slash,
   type HeadConfig,
+  type MarkdownEnv,
   type PageData
 } from './shared'
 import { getGitTimestamp } from './utils/getGitTimestamp'
+import { processIncludes } from './utils/processIncludes'
 
 const debug = _debug('vitepress:md')
 const cache = new LRUCache<string, MarkdownCompileResult>({ max: 1024 })
-const includesRE = /<!--\s*@include:\s*(.*?)\s*-->/g
 
 export interface MarkdownCompileResult {
   vueSrc: string
@@ -66,10 +66,12 @@ export async function createMarkdownToVueRenderFn(
     const relativePath = slash(path.relative(srcDir, file))
     const cacheKey = JSON.stringify({ src, file })
 
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      debug(`[cache hit] ${relativePath}`)
-      return cached
+    if (isBuild || options.cache !== false) {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        debug(`[cache hit] ${relativePath}`)
+        return cached
+      }
     }
 
     const start = Date.now()
@@ -86,29 +88,15 @@ export async function createMarkdownToVueRenderFn(
 
     // resolve includes
     let includes: string[] = []
-    src = src.replace(includesRE, (m, m1) => {
-      if (!m1.length) return m
-
-      const atPresent = m1[0] === '@'
-      try {
-        const dir = atPresent ? srcDir : path.dirname(fileOrig)
-        const includePath = path.join(
-          dir,
-          atPresent ? m1.slice(m1.length > 1 && m1[1] === '/' ? 2 : 1) : m1
-        )
-        const content = fs.readFileSync(includePath, 'utf-8')
-        includes.push(slash(includePath))
-        return content
-      } catch (error) {
-        return m // silently ignore error if file is not present
-      }
-    })
+    src = processIncludes(srcDir, src, fileOrig, includes)
 
     // reset env before render
     const env: MarkdownEnv = {
       path: file,
       relativePath,
-      cleanUrls
+      cleanUrls,
+      includes,
+      realPath: fileOrig
     }
     const html = md.render(src, env)
     const {
@@ -226,7 +214,9 @@ export async function createMarkdownToVueRenderFn(
       deadLinks,
       includes
     }
-    cache.set(cacheKey, result)
+    if (isBuild || options.cache !== false) {
+      cache.set(cacheKey, result)
+    }
     return result
   }
 }
@@ -300,14 +290,16 @@ function injectPageDataCode(
       code +
         (hasDefaultExport
           ? ``
-          : `\nexport default {name:'${data.relativePath}'}`) +
+          : `\nexport default {name:${JSON.stringify(data.relativePath)}}`) +
         `</script>`
     )
   } else {
     tags.unshift(
-      `<script ${isUsingTS ? 'lang="ts"' : ''}>${code}\nexport default {name:'${
+      `<script ${
+        isUsingTS ? 'lang="ts"' : ''
+      }>${code}\nexport default {name:${JSON.stringify(
         data.relativePath
-      }'}</script>`
+      )}}</script>`
     )
   }
 
